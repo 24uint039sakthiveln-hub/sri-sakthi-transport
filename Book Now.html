@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sri Sakthi Transport - Receipt</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+
+        h2 {
+            text-align: center;
+            color: #1e3c72;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #f4b400;
+            padding-bottom: 10px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0 15px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        input[readonly] {
+            background: #eee;
+            cursor: not-allowed;
+        }
+
+        button {
+            padding: 12px;
+            width: 100%;
+            background: linear-gradient(90deg, #f4b400, #ff9900);
+            color: #000;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            margin-top: 5px;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: linear-gradient(90deg, #ff9900, #f4b400);
+        }
+
+        .receipt {
+            margin-top: 25px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 6px solid #1e3c72;
+        }
+
+        .payment-box {
+            background: #e8f0ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th {
+            background: #1e3c72;
+            color: white;
+            padding: 8px;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .right {
+            text-align: right;
+            font-weight: bold;
+            margin-top: 6px;
+        }
+
+        /* PRINT SETTINGS */
+        @media print {
+            body * { visibility: hidden; }
+            .receipt, .receipt * { visibility: visible; }
+            .receipt { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; }
+            button { display: none; }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>🚚 Sri Sakthi Transport</h2>
+
+    <label>Customer Name</label>
+    <input type="text" id="customer">
+
+    <label>Service Name</label>
+    <input type="text" id="item">
+
+    <label>Quantity</label>
+    <input type="number" id="quantity" min="1" step="1">
+
+    <label>GST (%)</label>
+    <input type="number" id="gst" value="18" min="0" step="0.01">
+
+    <label>Advance Amount</label>
+    <input type="number" id="advance" value="1000" min="0" step="0.01">
+
+    <label>Payment Method</label>
+    <select id="paymentMethod">
+        <option value="Cash">Cash</option>
+        <option value="PhonePe">PhonePe</option>
+        <option value="Google Pay">Google Pay</option>
+        <option value="Bank Transfer">Bank Transfer</option>
+    </select>
+
+    <!-- Auto calculated fields -->
+    <label>GST Amount (auto-calculated)</label>
+    <input type="text" id="gstAmount" readonly>
+
+    <label>Grand Total (auto-calculated)</label>
+    <input type="text" id="grandTotal" readonly>
+
+    <button onclick="generatePaymentReceipt()">Step 1: Show Payment Receipt</button>
+    <button id="showInvoiceBtn" onclick="generateInvoice()" style="display:none;">Step 2: Show Full Invoice</button>
+    <button onclick="window.print()">Print Receipt</button>
+
+    <div class="receipt" id="receipt"></div>
+</div>
+
+<script>
+const FIXED_PRICE = 5000;
+
+// Auto calculate GST & Grand Total
+function updateGSTandTotal() {
+    let quantity = parseFloat(document.getElementById("quantity").value) || 0;
+    let gstPercent = parseFloat(document.getElementById("gst").value) || 0;
+    let subtotal = quantity * FIXED_PRICE;
+    let gstAmount = (subtotal * gstPercent) / 100;
+    let grandTotal = subtotal + gstAmount;
+
+    document.getElementById("gstAmount").value = '₹' + gstAmount.toFixed(2);
+    document.getElementById("grandTotal").value = '₹' + grandTotal.toFixed(2);
+}
+
+document.getElementById("quantity").addEventListener("input", updateGSTandTotal);
+document.getElementById("gst").addEventListener("input", updateGSTandTotal);
+window.onload = updateGSTandTotal;
+
+// Step 1: Payment Receipt Only
+function generatePaymentReceipt() {
+    let customer = document.getElementById("customer").value.trim();
+    let advance = parseFloat(document.getElementById("advance").value) || 0;
+    let paymentMethod = document.getElementById("paymentMethod").value;
+
+    if (!customer) {
+        alert("Please enter customer name.");
+        return;
+    }
+
+    document.getElementById("receipt").innerHTML = `
+        <h2 style="text-align:center;">Sri Sakthi Transport</h2>
+        <div class="payment-box">
+            <h3>Payment Receipt</h3>
+            <p><strong>Customer:</strong> ${customer}</p>
+            <p><strong>Payment Method:</strong> ${paymentMethod}</p>
+            <p><strong>Advance Paid:</strong> ₹${advance.toFixed(2)}</p>
+        </div>
+        <p style="text-align:center;color:#666;">Proceed to full invoice after payment</p>
+    `;
+
+    // Show button for full invoice after payment
+    document.getElementById("showInvoiceBtn").style.display = "block";
+}
+
+// Step 2: Full Invoice
+function generateInvoice() {
+    let customer = document.getElementById("customer").value.trim();
+    let item = document.getElementById("item").value.trim();
+    let quantity = parseFloat(document.getElementById("quantity").value) || 0;
+    let gstPercent = parseFloat(document.getElementById("gst").value) || 0;
+    let advance = parseFloat(document.getElementById("advance").value) || 0;
+    let paymentMethod = document.getElementById("paymentMethod").value;
+
+    if (!customer || !item || quantity <= 0) {
+        alert("Please fill all required fields correctly.");
+        return;
+    }
+
+    let subtotal = quantity * FIXED_PRICE;
+    let gstAmount = (subtotal * gstPercent) / 100;
+    let grandTotal = subtotal + gstAmount;
+    let balance = grandTotal - advance;
+    let date = new Date().toLocaleString();
+
+    document.getElementById("receipt").innerHTML = `
+        <h2 style="text-align:center;">Sri Sakthi Transport</h2>
+        <div class="payment-box">
+            <h3>Payment Receipt</h3>
+            <p><strong>Payment Method:</strong> ${paymentMethod}</p>
+            <p><strong>Advance Paid:</strong> ₹${advance.toFixed(2)}</p>
+        </div>
+
+        <h3>Invoice Details</h3>
+        <p><strong>Date:</strong> ${date}</p>
+        <p><strong>Customer:</strong> ${customer}</p>
+
+        <table>
+            <tr>
+                <th>Service</th>
+                <th>Qty</th>
+                <th>Fixed Price</th>
+                <th>Total</th>
+            </tr>
+            <tr>
+                <td>${item}</td>
+                <td>${quantity}</td>
+                <td>₹${FIXED_PRICE.toFixed(2)}</td>
+                <td>₹${subtotal.toFixed(2)}</td>
+            </tr>
+        </table>
+
+        <p class="right">Subtotal: ₹${subtotal.toFixed(2)}</p>
+        <p class="right">GST (${gstPercent}%): ₹${gstAmount.toFixed(2)}</p>
+        <p class="right">Grand Total: ₹${grandTotal.toFixed(2)}</p>
+        <p class="right">Advance Paid: ₹${advance.toFixed(2)}</p>
+        <p class="right">Balance Due: ₹${balance.toFixed(2)}</p>
+    `;
+}
+</script>
+
+</body>
+</html>
